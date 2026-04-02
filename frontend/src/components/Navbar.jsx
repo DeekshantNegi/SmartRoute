@@ -1,43 +1,37 @@
 import { useState } from "react";
 import logo from "../assets/logo.png";
 
-function Navbar({ onFindRoute }) {
-  const [source, setSource] = useState("");
+function Navbar({ onFindRoute, currentPosition, selectedTraffic, setSelectedTraffic }) {
+  const [sourceInput, setSourceInput] = useState(""); // optional source
   const [destination, setDestination] = useState("");
-  const [traffic, setTraffic] = useState("medium");
 
   const handleSubmit = () => {
-    onFindRoute({
-      source,
-      destination,
-      traffic
-    });
+    if (!destination) {
+      alert("Please enter a destination!");
+      return;
+    }
+
+    onFindRoute({ sourceInput, destination }); // send only source & destination
   };
 
   return (
     <div className="w-full bg-white shadow-md p-4 flex items-center">
+      {/* Logo */}
+      <img src={logo} alt="Logo" className="h-12 w-auto" />
 
-      {/* Logo at extreme left */}
-      <img
-        src={logo}
-        alt="Logo"
-        className="h-12 w-auto"
-      />
-
-      {/* Center section */}
+      {/* Center inputs */}
       <div className="flex gap-4 mx-auto items-center">
-
         <input
           type="text"
-          placeholder="Enter Source"
+          placeholder="Enter Source (optional)"
           className="border px-3 py-2 rounded-lg"
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
+          value={sourceInput}
+          onChange={(e) => setSourceInput(e.target.value)}
         />
 
         <input
           type="text"
-          placeholder="Enter Destination"
+          placeholder="Enter Destination "
           className="border px-3 py-2 rounded-lg"
           value={destination}
           onChange={(e) => setDestination(e.target.value)}
@@ -45,12 +39,13 @@ function Navbar({ onFindRoute }) {
 
         <select
           className="border px-3 py-2 rounded-lg"
-          value={traffic}
-          onChange={(e) => setTraffic(e.target.value)}
+          value={selectedTraffic}
+          onChange={(e) => setSelectedTraffic(e.target.value)}
         >
           <option value="low">Low Traffic</option>
           <option value="medium">Medium Traffic</option>
           <option value="high">High Traffic</option>
+          <option value="all">All Paths</option>
         </select>
 
         <button
@@ -59,9 +54,7 @@ function Navbar({ onFindRoute }) {
         >
           Find Route
         </button>
-
       </div>
-
     </div>
   );
 }
