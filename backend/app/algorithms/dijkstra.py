@@ -24,7 +24,7 @@ def dijkstra(G, source, destination, traffic_factor=1.0):
             if not edge_data:
                 continue
 
-            # 🔥 FIX: choose shortest edge
+        
             min_length = min(
                 data.get("length", 1) for data in edge_data.values()
             )
@@ -38,7 +38,7 @@ def dijkstra(G, source, destination, traffic_factor=1.0):
                 previous[neighbor] = current_node
                 heapq.heappush(pq, (new_distance, neighbor))
 
-    # Reconstruct path
+    
     path = []
     node = destination
 

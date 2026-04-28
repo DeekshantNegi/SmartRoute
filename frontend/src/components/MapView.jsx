@@ -4,13 +4,13 @@ import {
   TileLayer,
   Polyline,
   Marker,
-  Popup,
+  Tooltip,
   useMap
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Fix marker issue
+// 🔥 Fix default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -21,34 +21,47 @@ L.Icon.Default.mergeOptions({
     "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
 });
 
-// Convert [lon, lat] → [lat, lon]
-const convertCoords = (route = []) => {
-  return route.map((coord) => [coord[1], coord[0]]);
+// 🔁 Convert [lon, lat] → [lat, lon]
+const convertCoords = (route = []) =>
+  route.map(([lon, lat]) => [lat, lon]);
+
+// 📍 Get midpoint
+const getMidPoint = (route) => {
+  if (!route || route.length === 0) return null;
+  return route[Math.floor(route.length / 2)];
 };
 
-// Auto zoom
-function FitBounds({ route = [] }) {
+// 🔥 Invisible icon (for fuel labels)
+const invisibleIcon = L.divIcon({
+  className: "",
+});
+
+// 🔥 Fit map to route
+function FitBounds({ route }) {
   const map = useMap();
 
   useEffect(() => {
-    if (route.length > 0) {
-      const bounds = route.map((coord) => [coord[1], coord[0]]);
-      map.fitBounds(bounds);
+    if (route && route.length > 0) {
+      map.fitBounds(route);
     }
   }, [route, map]);
 
   return null;
 }
 
-function MapView({ routes, selectedTraffic = "all" }) {
+function MapView({ data }) {
   const [currentPosition, setCurrentPosition] = useState(null);
 
+  // 📍 Get user location
   useEffect(() => {
     if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCurrentPosition([pos.coords.latitude, pos.coords.longitude]);
+        setCurrentPosition([
+          pos.coords.latitude,
+          pos.coords.longitude
+        ]);
       },
       () => {
         setCurrentPosition([30.3165, 78.0322]); // fallback
@@ -56,19 +69,23 @@ function MapView({ routes, selectedTraffic = "all" }) {
     );
   }, []);
 
-  // Safe route extraction
-  const low = convertCoords(routes?.low || []);
-  const medium = convertCoords(routes?.medium || []);
-  const high = convertCoords(routes?.high || []);
+  // 🧠 Extract routes
+  const low = convertCoords(data?.routes?.low || []);
+  const medium = convertCoords(data?.routes?.medium || []);
+  const high = convertCoords(data?.routes?.high || []);
 
-  const trafficToShow =
-    selectedTraffic === "all"
-      ? ["low", "medium", "high"]
-      : [selectedTraffic];
+  // 📍 Midpoints (fuel labels)
+  const lowMid = getMidPoint(low);
+  const mediumMid = getMidPoint(medium);
+  const highMid = getMidPoint(high);
+
+  // 📍 Start & End (from low route)
+  const start = low.length > 0 ? low[0] : null;
+  const end = low.length > 0 ? low[low.length - 1] : null;
 
   return (
     <MapContainer
-      center={currentPosition || [30.3165, 78.0322]}
+      center={start || currentPosition || [30.3165, 78.0322]}
       zoom={10}
       style={{ height: "90vh", width: "100%" }}
     >
@@ -77,39 +94,78 @@ function MapView({ routes, selectedTraffic = "all" }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* ROUTES (only if available) */}
-      {trafficToShow.includes("low") && low.length > 0 && (
-        <>
-          <Polyline positions={low} color="green" />
-          <FitBounds route={routes?.low || []} />
-        </>
-      )}
+      {/* 🔥 AUTO FIT */}
+      {low.length > 0 && <FitBounds route={low} />}
 
-      {trafficToShow.includes("medium") && medium.length > 0 && (
-        <Polyline positions={medium} color="orange" />
-      )}
-
-      {trafficToShow.includes("high") && high.length > 0 && (
-        <Polyline positions={high} color="red" />
-      )}
-
-      {/* Start + End markers (only if route exists) */}
+      {/* 🟢 LOW ROUTE */}
       {low.length > 0 && (
         <>
-          <Marker position={low[0]}>
-            <Popup>Start</Popup>
-          </Marker>
+          <Polyline positions={low} color="green" />
 
-          <Marker position={low[low.length - 1]}>
-            <Popup>Destination</Popup>
-          </Marker>
+          {lowMid && (
+            <Marker position={lowMid} icon={invisibleIcon}>
+              <Tooltip permanent direction="top">
+                <div className="bg-white px-2 py-1 rounded-md shadow-md text-xs font-semibold border border-gray-300">
+                  ₹{data.fuel_cost?.low}
+                </div>
+              </Tooltip>
+            </Marker>
+          )}
         </>
       )}
 
-      {/* Current location always visible */}
+      {/* 🟡 MEDIUM ROUTE */}
+      {medium.length > 0 && (
+        <>
+          <Polyline positions={medium} color="orange" />
+
+          {mediumMid && (
+            <Marker position={mediumMid} icon={invisibleIcon}>
+              <Tooltip permanent direction="top">
+                <div className="bg-white px-2 py-1 rounded-md shadow-md text-xs font-semibold border border-gray-300">
+                  ₹{data.fuel_cost?.medium}
+                </div>
+              </Tooltip>
+            </Marker>
+          )}
+        </>
+      )}
+
+      {/* 🔴 HIGH ROUTE */}
+      {high.length > 0 && (
+        <>
+          <Polyline positions={high} color="red" />
+
+          {highMid && (
+            <Marker position={highMid} icon={invisibleIcon}>
+              <Tooltip permanent direction="top">
+                <div className="bg-white px-2 py-1 rounded-md shadow-md text-xs font-semibold border border-gray-300">
+                  ₹{data.fuel_cost?.high}
+                </div>
+              </Tooltip>
+            </Marker>
+          )}
+        </>
+      )}
+
+      {/* 📍 START MARKER */}
+      {start && (
+        <Marker position={start}>
+          <Tooltip>Start</Tooltip>
+        </Marker>
+      )}
+
+      {/* 🎯 DESTINATION MARKER */}
+      {end && (
+        <Marker position={end}>
+          <Tooltip>Destination</Tooltip>
+        </Marker>
+      )}
+
+      {/* 📍 CURRENT LOCATION */}
       {currentPosition && (
         <Marker position={currentPosition}>
-          <Popup>Your Location</Popup>
+          <Tooltip>Your Location</Tooltip>
         </Marker>
       )}
     </MapContainer>

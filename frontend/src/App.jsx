@@ -5,55 +5,65 @@ import MapView from "./components/MapView";
 
 function App() {
   const [currentPosition, setCurrentPosition] = useState(null);
-  const [routes, setRoutes] = useState({
-    low: [],
-    medium: [],
-    high: [],
-  });
-  const [selectedTraffic, setSelectedTraffic] = useState("medium"); // default
+  const [data, setData] = useState(null);
+  const [selectedTraffic, setSelectedTraffic] = useState("all");
 
-  // Get user's current location on mount
+  // 📍 Get user location
   useEffect(() => {
     if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCurrentPosition([pos.coords.latitude, pos.coords.longitude]);
+        setCurrentPosition([
+          pos.coords.latitude,
+          pos.coords.longitude
+        ]);
       },
-      (err) => console.error("Error getting location:", err)
+      (err) => console.error(err)
     );
   }, []);
 
-  // Function called when user clicks "Find Route"
+  // 🚀 Find route
   const findRoute = async ({ sourceInput, destination }) => {
+    if (!destination) {
+      alert("Destination missing");
+      return;
+    }
 
-  if (!sourceInput || !destination) {
-    alert("Source or destination missing");
-    return;
-  }
+    try {
+      const payload = {
+        destination
+      };
 
-  try {
-    const res = await axios.post("http://localhost:8000/route", {
-      source: sourceInput,
-      destination: destination
-    });
+      if (sourceInput) {
+        payload.source = sourceInput;
+      } else if (currentPosition) {
+        payload.source_coords = currentPosition;
+      }
 
-    setRoutes(res.data.routes);
+      const res = await axios.post(
+        "http://localhost:8000/route",
+        payload
+      );
 
-  } catch (err) {
-    console.error(err);
-  }
-};
+      setData(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div>
+      {/* ✅ Always visible */}
       <Navbar
         onFindRoute={findRoute}
         currentPosition={currentPosition}
         selectedTraffic={selectedTraffic}
         setSelectedTraffic={setSelectedTraffic}
       />
-      <MapView routes={routes} selectedTraffic="all" />
+
+      {/* ✅ Always show map */}
+      <MapView data={data} selectedTraffic={selectedTraffic} />
     </div>
   );
 }

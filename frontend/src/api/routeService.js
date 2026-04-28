@@ -1,42 +1,16 @@
-import { useEffect, useState } from "react";
-import { getRoutes } from "./api";
-import MapView from "./MapView"; // 🔥 IMPORTANT
+import axios from "axios";
 
-function App() {
-  const [routes, setRoutes] = useState(null);
+export const getRoutes = async ({ source_coords, destination }) => {
+  try {
+    const res = await axios.post("http://localhost:8000/route", {
+      source_coords: source_coords,   // 🔥 GPS coordinates
+      destination: destination
+    });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getRoutes({
-          source: "Dehradun",
-          destination: "Mussoorie"
-        });
-
-        console.log("API RESPONSE:", data);
-
-        if (!data.error) {
-          setRoutes(data.routes);
-        }
-      } catch (err) {
-        console.error("API Error:", err);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  console.log("ROUTES STATE:", routes);
-
-  return (
-    <>
-      {!routes ? (
-        <div style={{ padding: "20px" }}>Loading route...</div>
-      ) : (
-        <MapView routes={routes} selectedTraffic="all" />
-      )}
-    </>
-  );
-}
-
-export default App;
+    return res.data; // full response (routes + distance + fuel_cost)
+    console.log("API RESPONSE:", res.data);
+  } catch (err) {
+    console.error("API Error:", err);
+    return { error: true };
+  }
+};

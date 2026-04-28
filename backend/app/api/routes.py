@@ -7,6 +7,9 @@ router = APIRouter()
 @router.post("/route")
 def get_route(data: RouteRequest):
 
-    routes = find_routes(data.source, data.destination)
+    routes = find_routes(
+        source=data.source,
+        destination=data.destination
+    )
 
     return routes
