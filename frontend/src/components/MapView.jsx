@@ -64,30 +64,26 @@ function MapView({ data }) {
         ]);
       },
       () => {
-        setCurrentPosition([30.3165, 78.0322]); // fallback
+        setCurrentPosition([30.3165, 78.0322]); // fallback (Dehradun)
       }
     );
   }, []);
 
-  // 🧠 Extract routes
-  const low = convertCoords(data?.routes?.low || []);
-  const medium = convertCoords(data?.routes?.medium || []);
-  const high = convertCoords(data?.routes?.high || []);
+  // 🧠 Extract single route
+  const route = convertCoords(data?.route || []);
 
-  // 📍 Midpoints (fuel labels)
-  const lowMid = getMidPoint(low);
-  const mediumMid = getMidPoint(medium);
-  const highMid = getMidPoint(high);
+  // 📍 Midpoint
+  const midPoint = getMidPoint(route);
 
-  // 📍 Start & End (from low route)
-  const start = low.length > 0 ? low[0] : null;
-  const end = low.length > 0 ? low[low.length - 1] : null;
+  // 📍 Start & End
+  const start = route.length > 0 ? route[0] : null;
+  const end = route.length > 0 ? route[route.length - 1] : null;
 
   return (
     <MapContainer
       center={start || currentPosition || [30.3165, 78.0322]}
       zoom={10}
-      style={{ height: "90vh", width: "100%" }}
+      style={{ height: "100%", width: "100%" }}
     >
       <TileLayer
         attribution="© OpenStreetMap"
@@ -95,18 +91,19 @@ function MapView({ data }) {
       />
 
       {/* 🔥 AUTO FIT */}
-      {low.length > 0 && <FitBounds route={low} />}
+      {route.length > 0 && <FitBounds route={route} />}
 
-      {/* 🟢 LOW ROUTE */}
-      {low.length > 0 && (
+      {/* 🔵 ROUTE */}
+      {route.length > 0 && (
         <>
-          <Polyline positions={low} color="green" />
+          <Polyline positions={route} color="blue" />
 
-          {lowMid && (
-            <Marker position={lowMid} icon={invisibleIcon}>
+          {/* 💰 Fuel Cost */}
+          {midPoint && (
+            <Marker position={midPoint} icon={invisibleIcon}>
               <Tooltip permanent direction="top">
                 <div className="bg-white px-2 py-1 rounded-md shadow-md text-xs font-semibold border border-gray-300">
-                  ₹{data.fuel_cost?.low}
+                  ₹{data?.fuel_cost}
                 </div>
               </Tooltip>
             </Marker>
@@ -114,48 +111,14 @@ function MapView({ data }) {
         </>
       )}
 
-      {/* 🟡 MEDIUM ROUTE */}
-      {medium.length > 0 && (
-        <>
-          <Polyline positions={medium} color="orange" />
-
-          {mediumMid && (
-            <Marker position={mediumMid} icon={invisibleIcon}>
-              <Tooltip permanent direction="top">
-                <div className="bg-white px-2 py-1 rounded-md shadow-md text-xs font-semibold border border-gray-300">
-                  ₹{data.fuel_cost?.medium}
-                </div>
-              </Tooltip>
-            </Marker>
-          )}
-        </>
-      )}
-
-      {/* 🔴 HIGH ROUTE */}
-      {high.length > 0 && (
-        <>
-          <Polyline positions={high} color="red" />
-
-          {highMid && (
-            <Marker position={highMid} icon={invisibleIcon}>
-              <Tooltip permanent direction="top">
-                <div className="bg-white px-2 py-1 rounded-md shadow-md text-xs font-semibold border border-gray-300">
-                  ₹{data.fuel_cost?.high}
-                </div>
-              </Tooltip>
-            </Marker>
-          )}
-        </>
-      )}
-
-      {/* 📍 START MARKER */}
+      {/* 📍 START */}
       {start && (
         <Marker position={start}>
           <Tooltip>Start</Tooltip>
         </Marker>
       )}
 
-      {/* 🎯 DESTINATION MARKER */}
+      {/* 🎯 DESTINATION */}
       {end && (
         <Marker position={end}>
           <Tooltip>Destination</Tooltip>

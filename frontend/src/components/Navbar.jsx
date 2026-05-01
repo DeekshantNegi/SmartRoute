@@ -1,8 +1,8 @@
 import { useState } from "react";
 import logo from "../assets/logo.png";
 
-function Navbar({ onFindRoute, currentPosition, selectedTraffic, setSelectedTraffic }) {
-  const [sourceInput, setSourceInput] = useState(""); // optional source
+function Navbar({ onFindRoute, currentPosition }) {
+  const [sourceInput, setSourceInput] = useState("");
   const [destination, setDestination] = useState("");
 
   const handleSubmit = () => {
@@ -11,7 +11,7 @@ function Navbar({ onFindRoute, currentPosition, selectedTraffic, setSelectedTraf
       return;
     }
 
-    onFindRoute({ sourceInput, destination }); // send only source & destination
+    onFindRoute({ sourceInput, destination });
   };
 
   return (
@@ -31,22 +31,11 @@ function Navbar({ onFindRoute, currentPosition, selectedTraffic, setSelectedTraf
 
         <input
           type="text"
-          placeholder="Enter Destination "
+          placeholder="Enter Destination"
           className="border px-3 py-2 rounded-lg"
           value={destination}
           onChange={(e) => setDestination(e.target.value)}
         />
-
-        <select
-          className="border px-3 py-2 rounded-lg"
-          value={selectedTraffic}
-          onChange={(e) => setSelectedTraffic(e.target.value)}
-        >
-          <option value="low">Low Traffic</option>
-          <option value="medium">Medium Traffic</option>
-          <option value="high">High Traffic</option>
-          <option value="all">All Paths</option>
-        </select>
 
         <button
           onClick={handleSubmit}

@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Navbar from "./components/Navbar";
 import MapView from "./components/MapView";
+import RouteInfo from "./components/RouteInfo";
 
 function App() {
   const [currentPosition, setCurrentPosition] = useState(null);
   const [data, setData] = useState(null);
-  const [selectedTraffic, setSelectedTraffic] = useState("all");
 
   // 📍 Get user location
   useEffect(() => {
@@ -53,17 +53,29 @@ function App() {
   };
 
   return (
-    <div>
-      {/* ✅ Always visible */}
-      <Navbar
-        onFindRoute={findRoute}
-        currentPosition={currentPosition}
-        selectedTraffic={selectedTraffic}
-        setSelectedTraffic={setSelectedTraffic}
-      />
+    <div className="h-screen flex flex-col overflow-hidden">
+      
+      {/* 🔝 Navbar */}
+      <div className="flex-shrink-0">
+        <Navbar
+          onFindRoute={findRoute}
+          currentPosition={currentPosition}
+        />
+      </div>
 
-      {/* ✅ Always show map */}
-      <MapView data={data} selectedTraffic={selectedTraffic} />
+      {/* 🗺 Map + Overlay */}
+      <div className="flex-1 relative">
+        <MapView data={data} />
+
+        {/* 📦 Route Info (only when data exists) */}
+        {data && (
+          <RouteInfo
+            data={data}
+            onClose={() => setData(null)}
+          />
+        )}
+      </div>
+
     </div>
   );
 }
